@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+  # Docker DNS returns every replica's IP for the service name "app",
+  # so containers added or removed by the healer are discovered automatically.
+  - job_name: app
+    dns_sd_configs:
+      - names: ['app']
+        type: A
+        port: 5000
+        refresh_interval: 5s
+  - job_name: cadvisor
+    static_configs:
+      - targets: ['cadvisor:8080']
+  - job_name: node
+    static_configs:
+      - targets: ['node-exporter:9100']
