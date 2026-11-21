@@ -1,7 +1,6 @@
 apiVersion: 1
 providers:
-
-name: shi
-type: file
-options:
-path: /var/lib/grafana/dashboards
+  - name: shi
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

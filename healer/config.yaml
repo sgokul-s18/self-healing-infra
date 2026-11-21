@@ -1,0 +1,34 @@
+project: shi
+service: app
+network: shi_appnet
+app_port: 5000
+compose_file: ../docker-compose.yml
+prometheus_url: http://localhost:9090   # host-side; becomes http://prometheus:9090 when the healer is containerized
+log_file: ../logs/healer_events.csv
+poll_interval_sec: 5
+
+health:
+  path: /health
+  timeout_sec: 2
+  consecutive_failures: 3
+  grace_after_action_sec: 15
+
+thresholds:
+  cpu_high_pct: 80            # percent of the container's CPU limit
+  cpu_high_sustain_sec: 30
+  cpu_low_pct: 30
+  cpu_low_sustain_sec: 60
+  mem_high_pct: 85            # percent of the container's memory limit
+  mem_sustain_sec: 15
+
+scaling:
+  min_replicas: 2
+  max_replicas: 4
+  cooldown_sec: 60
+
+recovery:
+  action_cooldown_sec: 20
+  restarts_before_replace: 3
+  window_sec: 300
+  replacements_before_giving_up: 2
+  verify_timeout_sec: 40
