@@ -1,0 +1,88 @@
+name: shi
+ 
+services:
+  app:
+    build: ./app
+    image: self-healing-app:latest
+    restart: "no"          # recovery is the healer's job, not Docker's
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    networks: [appnet]
+ 
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro,z   ### RHEL
+    depends_on: [app]
+    restart: unless-stopped
+    networks: [appnet]
+ 
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=24h
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro,z   ### RHEL
+      - prom_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks: [appnet]
+ 
+  cadvisor:
+    image: ghcr.io/google/cadvisor:0.56.2    # ghcr tags have NO "v" prefix
+    command: ["--docker_only=true", "--housekeeping_interval=5s"]
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+    networks: [appnet]
+ 
+  node-exporter:
+    image: prom/node-exporter:latest
+    command: ["--path.rootfs=/host"]
+    pid: host
+    security_opt:
+      - label=disable                                            ### RHEL
+    volumes:
+      - /:/host:ro,rslave
+    restart: unless-stopped
+    networks: [appnet]
+ 
+  grafana:
+    image: grafana/grafana:latest-ubuntu   # the default (Alpine) image segfaulted on our Ubuntu VM
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?set GRAFANA_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro,z    ### RHEL
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro,z    ### RHEL
+    ports:
+      - "3000:3000"
+    depends_on: [prometheus]
+    restart: unless-stopped
+    networks: [appnet]
+ 
+volumes:
+  prom_data:
+  grafana_data:
+ 
+networks:
+  appnet:
+    name: shi_appnet
