@@ -5,6 +5,7 @@ services:
     build: ./app
     image: self-healing-app:latest
     restart: "no"          # recovery is the healer's job, not Docker's
+    memswap_limit: 128M
     deploy:
       replicas: 2
       resources:
