@@ -25,7 +25,9 @@ HEADER_EVERY = 40
 # Default level for each event type
 LEVELS = {"STARTED": "INFO", "RUNNING": "INFO", "DETECTED": "WARN", "CLEARED": "OK",
           "DECISION": "INFO", "EXECUTED": "INFO", "VERIFIED": "OK",
-          "ALERT": "ERROR", "ERROR": "ERROR"}
+          "ALERT": "ERROR", "ERROR": "ERROR", "RECOVERED": "OK"}
+UP_LABEL = {"CONTAINER_DOWN": "CONTAINER_UP", "HEALTH_FAIL": "HEALTH_OK",
+            "MEM_HIGH": "MEM_NORMAL", "CPU_HIGH": "CPU_NORMAL", "CPU_LOW": "CPU_NORMAL"}
 # The CSV keeps the original event names so evaluation scripts stay valid
 CSV_EVENT = {"EXECUTED": "ACTION_DONE", "ALERT": "DECISION"}
 
@@ -200,7 +202,10 @@ def main():
                 if key not in active:
                     events.log("DETECTED", f.container, f.kind, f.detail, ts=snap["ts"])
             for key in active - current.keys():
-                events.log("CLEARED", key[0], key[1], "fault no longer present")
+                events.log("CLEARED", key[0], key[1], f"resolved: {key[1]} no longer present")
+                events.log("RECOVERED", key[0], UP_LABEL.get(key[1], "RECOVERED"),
+                           "replica back in service" if key[1] == "CONTAINER_DOWN"
+                           else "metric back to normal")
             active = set(current)
 
             for a in dec.decide(findings, snap, snap["ts"]):
