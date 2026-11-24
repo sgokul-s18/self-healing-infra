@@ -3,7 +3,7 @@ service: app
 network: shi_appnet
 app_port: 5000
 compose_file: ../docker-compose.yml
-prometheus_url: http://localhost:9090   # host-side; becomes http://prometheus:9090 when the healer is containerized
+prometheus_url: http://127.0.0.1:9090   # host-side; becomes http://prometheus:9090 when the healer is containerized
 log_file: ../logs/healer_events.csv
 poll_interval_sec: 5
 
@@ -14,7 +14,7 @@ health:
   grace_after_action_sec: 15
 
 thresholds:
-  cpu_high_pct: 80            # percent of the container's CPU limit
+  cpu_high_pct: 85            # percent of the container's CPU limit
   cpu_high_sustain_sec: 30
   cpu_low_pct: 30
   cpu_low_sustain_sec: 60
